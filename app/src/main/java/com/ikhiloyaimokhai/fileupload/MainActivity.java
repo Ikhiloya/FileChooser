@@ -42,55 +42,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         imageView = findViewById(R.id.imageView);
-
-
-        String split = DOC_MIME_TYPE.split(SPLIT)[0];
-
-        System.out.println("*****************************" + split);
         mContext = MainActivity.this;
 
-
-//        imageView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                viewImage(Uri.parse("content://com.android.providers.media.documents/document/image%3A62"), MainActivity.this);
-//            }
-//        });
     }
 
     public void selectImage(View view) {
-//        viewPdf();
-//        createFile("image/png", "mypicture.png");
+
 //        performFileSearch(Constant.IMAGE_MIME_TYPE);
 //        performFileSearch(Constant.TEXT_MIME_TYPE);
         performFileSearch(DOC_MIME_TYPE);
-//
-//        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-//        photoPickerIntent.setType("image/*");
-//        startActivityForResult(photoPickerIntent, RESULT_LOAD_IMG);
-    }
 
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//
-//
-//        if (resultCode == RESULT_OK) {
-//            try {
-//                final Uri imageUri = data.getData();
-//                System.out.println("****************URI" + imageUri);
-//                final InputStream imageStream = getContentResolver().openInputStream(imageUri);
-//                final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-//                imageView.setImageBitmap(selectedImage);
-//            } catch (FileNotFoundException e) {
-//                e.printStackTrace();
-//                Toast.makeText(MainActivity.this, "Something went wrong", Toast.LENGTH_LONG).show();
-//            }
-//
-//        } else {
-//            Toast.makeText(MainActivity.this, "You haven't picked Image", Toast.LENGTH_LONG).show();
-//        }
-//    }
+    }
 
 
     /**
