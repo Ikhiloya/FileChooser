@@ -10,16 +10,21 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
+import android.util.Base64;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Objects;
+
+import static androidx.constraintlayout.widget.Constraints.TAG;
 
 public class IntentUtils {
 
@@ -44,8 +49,9 @@ public class IntentUtils {
 
     public static Bitmap getBitmapFromUri(Uri uri, Context context) throws IOException {
         ParcelFileDescriptor parcelFileDescriptor =
-               context.getContentResolver().openFileDescriptor(uri, "r");
+                context.getContentResolver().openFileDescriptor(uri, "r");
         FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+
         Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
         parcelFileDescriptor.close();
         return image;
@@ -63,15 +69,17 @@ public class IntentUtils {
                 stringBuilder.append(line);
             }
         }
-
-
-//        Log.i(TAG, "StringUrl: " + stringBuilder.toString());
-
         return stringBuilder.toString();
     }
 
 
+    public  static  InputStream readInputStreamFromUri(Uri uri, Context context) throws IOException {
+        InputStream inputStream =
+                context.getContentResolver().openInputStream(uri);
 
+        Log.i(TAG, "inputstream: " + inputStream);
+        return inputStream;
+    }
 
 
     public static boolean isVirtualFile(Uri uri, Context context) {
@@ -94,22 +102,37 @@ public class IntentUtils {
     }
 
 
-    /**
-    private InputStream getInputStreamForVirtualFile(Uri uri, String mimeTypeFilter)
-            throws IOException {
-
-        ContentResolver resolver = getContentResolver();
-
-        String[] openableMimeTypes = resolver.getStreamTypes(uri, mimeTypeFilter);
-
-        if (openableMimeTypes == null || openableMimeTypes.length &lt; 1) {
-            throw new FileNotFoundException();
+    public static byte[] convertImageToByte(Uri uri, Context context){
+        byte[] data = null;
+        try {
+            ContentResolver cr = context.getContentResolver();
+            InputStream inputStream = cr.openInputStream(uri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            data = baos.toByteArray();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
-
-        return resolver
-                .openTypedAssetFileDescriptor(uri, openableMimeTypes[0], null)
-                .createInputStream();
+        return data;
     }
+
+    /**
+     * private InputStream getInputStreamForVirtualFile(Uri uri, String mimeTypeFilter)
+     * throws IOException {
+     * <p>
+     * ContentResolver resolver = getContentResolver();
+     * <p>
+     * String[] openableMimeTypes = resolver.getStreamTypes(uri, mimeTypeFilter);
+     * <p>
+     * if (openableMimeTypes == null || openableMimeTypes.length &lt; 1) {
+     * throw new FileNotFoundException();
+     * }
+     * <p>
+     * return resolver
+     * .openTypedAssetFileDescriptor(uri, openableMimeTypes[0], null)
+     * .createInputStream();
+     * }
      **/
 
 
@@ -148,7 +171,7 @@ public class IntentUtils {
 
     //TODO: change signature to return the name of the Image
     //TODO: also add util method to return the name of a file
-    public static  void dumpImageMetaData(Uri uri, Context context) {
+    public static void dumpImageMetaData(Uri uri, Context context) {
 
         // The query, since it only applies to a single document, will only return
         // one row. There's no need to filter, sort, or select fields, since we want
@@ -185,6 +208,30 @@ public class IntentUtils {
             }
         } finally {
             cursor.close();
+        }
+    }
+
+    public static String BitMapToString(Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] b = baos.toByteArray();
+        String temp = Base64.encodeToString(b, Base64.DEFAULT);
+        return temp;
+    }
+
+
+    /**
+     * @param encodedString
+     * @return bitmap (from given string)
+     */
+    public static Bitmap StringToBitMap(String encodedString) {
+        try {
+            byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
+            return bitmap;
+        } catch (Exception e) {
+            e.getMessage();
+            return null;
         }
     }
 

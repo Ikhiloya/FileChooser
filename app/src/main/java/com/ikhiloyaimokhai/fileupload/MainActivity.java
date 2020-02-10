@@ -13,11 +13,14 @@ import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +53,8 @@ public class MainActivity extends AppCompatActivity {
 
 //        performFileSearch(Constant.IMAGE_MIME_TYPE);
 //        performFileSearch(Constant.TEXT_MIME_TYPE);
-        performFileSearch(DOC_MIME_TYPE);
+//        performFileSearch(DOC_MIME_TYPE);
+        performFileSearch(ALL_FILES);
 
     }
 
@@ -94,15 +98,30 @@ public class MainActivity extends AppCompatActivity {
             Uri uri = null;
             if (resultData != null) {
                 uri = resultData.getData();
+                File file = new File(Objects.requireNonNull(uri.getPath()));
+
                 Log.i(TAG, "Uri: " + uri.toString());
+                Log.i(TAG, "file: " + file);
+                Log.i(TAG, "file: " + file.getName());
                 try {
+//                    InputStream inputStream = IntentUtils.readInputStreamFromUri(uri, MainActivity.this);
+
+                    byte[] bytes = IntentUtils.convertImageToByte(uri, MainActivity.this);
+//                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+                    Log.i(TAG, "ibytes: " + bytes);
+
+
                     boolean isVirtualFile = IntentUtils.isVirtualFile(uri, mContext);
                     Log.i(TAG, "isVirtual File: " + isVirtualFile);
                     Log.i(TAG, String.format("MimeType is:: %s", IntentUtils.getMimeType(mContext, uri)));
                     final String mimeType = IntentUtils.getMimeType(MainActivity.this, uri);
 //                    readTextFromUri(uri);
                     IntentUtils.dumpImageMetaData(uri, mContext);
-                    imageView.setImageBitmap(IntentUtils.getBitmapFromUri(uri, mContext));
+
+                    Bitmap bitmapFromUriCompressed = getBitmapFromUri(uri, mContext);
+
+                    imageView.setImageBitmap(bitmapFromUriCompressed);
                     final Uri finalUri = uri;
                     imageView.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -125,6 +144,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public Bitmap getBitmapFromUri(Uri uri, Context context) throws IOException {
+        ParcelFileDescriptor parcelFileDescriptor =
+                context.getContentResolver().openFileDescriptor(uri, "r");
+        FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+
+
+        // Get the dimensions of the View
+        int targetW = imageView.getWidth();
+        int targetH = imageView.getHeight();
+
+        // Get the dimensions of the bitmap
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+
+        int photoW = bmOptions.outWidth;
+        int photoH = bmOptions.outHeight;
+
+        // Determine how much to scale down the image
+        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+
+        // Decode the image file into a Bitmap sized to fill the View
+        bmOptions.inJustDecodeBounds = false;
+        bmOptions.inSampleSize = scaleFactor;
+        bmOptions.inPurgeable = true;
+
+
+        Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor, null, bmOptions);
+        parcelFileDescriptor.close();
+        return image;
+    }
 
 
     /*
@@ -165,5 +214,28 @@ public class MainActivity extends AppCompatActivity {
 //                .createInputStream();
 //    }
 
+    public String BitMapToString(Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] b = baos.toByteArray();
+        String temp = Base64.encodeToString(b, Base64.DEFAULT);
+        return temp;
+    }
+
+
+    /**
+     * @param encodedString
+     * @return bitmap (from given string)
+     */
+    public Bitmap StringToBitMap(String encodedString) {
+        try {
+            byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
+            return bitmap;
+        } catch (Exception e) {
+            e.getMessage();
+            return null;
+        }
+    }
 
 }
